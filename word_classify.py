@@ -3,6 +3,8 @@
 '''
 import os
 import json
+import math
+import operator
 
 
 '''
@@ -23,12 +25,12 @@ vocab : {
 ========
 
 '''
-def gen_vocab(root):
+def learn_naive_bayes_text(root):
 
     class_names = []
     paths = []
     vocab_dict = {}
-    total_vocab = {}
+    num_of_vocab_dict = {}
 
     # root_path = './json'
     root_path = root
@@ -54,35 +56,47 @@ def gen_vocab(root):
 
     # print('==========for-debug===========')
     # print('total file = ' + str(total_file))
+
     # print('========================')
 
 
     #  inital tocal vocab in each class.
     for class_name in class_names:
-        total_vocab[class_name] = 0
+        num_of_vocab_dict[class_name] = 0
 
     # count add vocab
     for class_name in class_names:
         for target_path in target_paths[class_name]:
 
             try:
-                f = open(target_path)
+                # test must delete
+                # if("./json/comp.windows.x/66422.txt.json" == target_path):
+                #     print("safe :) ")
+                #     input()
                 # print(target_path)
+                f = open(target_path)
                 reader = json.load(f)
                 for sentence in reader['sentences']:
                     for token in sentence['tokens']:
                         word = token['originalText']
+                        word = str.lower(word)
+
+                        # print(target_path)
+                        # if("./json/sci.electronics/52434.txt.json" in target_path):
+                            # print("safe :) ",word)
+                            # input()
                         if word in vocab_dict.keys():
                             vocab_dict[word][class_name + "_count"] += 1
                         else:
                             vocab_dict[word] = {}
+                            # give 1 to all of each class
                             for _class_name in class_names:
-                                vocab_dict[word][_class_name + str("_count")] = 0
+                                vocab_dict[word][_class_name + str("_count")] = 1
 
                             currn_key = class_name + str("_count")
                             vocab_dict[word][currn_key] = 1
 
-                        total_vocab[class_name] += 1
+                        num_of_vocab_dict[class_name] += 1
 
             except Exception as inst:
                 pass
@@ -94,21 +108,102 @@ def gen_vocab(root):
                 # print('\n====\n')
 
     # genterate probability in each class
+    # # P(wk |vj) <- nk+1/n+ |Vocabulary |
+
+    # find |vocab|  = total_vocab
+    total_vocab = 0
+
+    for class_name in class_names:
+        total_vocab += num_of_vocab_dict[class_name]
+
     for class_name in class_names:
         # print(class_name)
         for word in vocab_dict:
             key = class_name + str("_prob")
-            vocab_dict[word][key] = vocab_dict[word][
-                class_name + "_count"] / total_vocab[class_name]
-
-    return vocab_dict
 
 
-def classify():
-    vocab = gen_vocab('./json')
+            # |Vocabulary | = num_of_vocab_dict[class_names]
+            # n + | Vocabulary |
 
+            #  n = num_of_vocab_dict[class_name]
+
+            #      P(Wk|Vj)       =  nk+1 / n+ |Vocabulary |
+            vocab_dict[word][key] = (vocab_dict[word][class_name + "_count"] +1) \
+                                    / (num_of_vocab_dict[class_name] + total_vocab)
+#  debug
+    # print(vocab_dict)
+    return vocab_dict, num_of_vocab_dict
+
+
+"""
+classify the word, and return it what is in each class.
+"""
+def classify_naive_bayes_text(doc, data):
+    vocab, num_of_vocab_dict = data
+    class_names = []
+    prob_class_names = {}
+    total_vocab = 0
+
+    ans_set = {}
+
+    for key in num_of_vocab_dict.keys():
+        total_vocab += num_of_vocab_dict[key]
+        class_names.append(key)
+
+    # add prob_class_names
+    for class_name in class_names:
+        prob_class_names[class_name] = num_of_vocab_dict[class_name] / total_vocab
+
+        # assign prob_class_names to ans_set
+        # ans_set[class_name] = prob_class_names[class_name]
+
+        # use log
+        ans_set[class_name] = math.log(prob_class_names[class_name])
+        # print(ans_set[class_name])
+
+
+    for w_doc in doc:
+        if(w_doc in vocab.keys()):
+            for class_name in class_names:
+                key = class_name + str("_prob")
+                # ans_set[class_name] *= vocab[w_doc][key]
+                # use log
+                ans_set[class_name] += math.log(vocab[w_doc][key])
+
+    # decending order
+    sorted_ans_set = sorted(ans_set.items(), key=operator.itemgetter(1), reverse=True)
+
+    # debug
+    for key in ans_set.keys():
+        val = ans_set[key]
+        print(key,val)
+
+    return sorted_ans_set[0][0]
+
+'''
+read_doc return each word of doc in list.
+'''
+def read_doc(doc):
+    doc_list = []
+    for sentence in doc['sentences']:
+        for token in sentence['tokens']:
+            word = token['originalText']
+            word = str.lower(word)
+            doc_list.append(word)
+    return doc_list
+
+'''
+main function
+'''
 def main():
-    classify()
+    data = learn_naive_bayes_text('./json')
+    # file_doc = open('./json/sci.electronics/54503.txt.json')
+    file_doc = open('./test-data/37261.txt.json')
+    doc = json.load(file_doc)
+    doc = read_doc(doc)
+    ans = classify_naive_bayes_text(doc, data)
+    print(ans)
+
 
 if __name__ == '__main__':
     main()
