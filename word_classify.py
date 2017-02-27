@@ -196,13 +196,34 @@ def read_doc(doc):
 main function
 '''
 def main():
-    data = learn_naive_bayes_text('./json')
-    # file_doc = open('./json/sci.electronics/54503.txt.json')
-    file_doc = open('./test-data/37261.txt.json')
-    doc = json.load(file_doc)
-    doc = read_doc(doc)
-    ans = classify_naive_bayes_text(doc, data)
-    print(ans)
+    data = learn_naive_bayes_text('./train-data')
+    # file_doc = open('./test-data/elec.52723.txt.json')
+    # file_doc = open('./test-data/37261.txt.json')
+    # doc = json.load(file_doc)
+    # doc = read_doc(doc)
+    # ans = classify_naive_bayes_text(doc, data)
+
+    valid = 0
+    total = 0
+    test_path = './test-data'
+
+    for file in os.listdir(test_path):
+        total += 1
+        target = os.path.join(test_path, file)
+        if'.DS_Store' in file:
+            continue
+        t_doc = open(target)
+        t_doc = json.load(t_doc)
+        t_doc = read_doc(t_doc)
+        ans = classify_naive_bayes_text(t_doc, data)
+        if file[0:3] == 'com':
+            if ans[0:3] == 'com':
+                valid += 1
+        if file[0:3] == 'ele':
+            if ans[0:3] == 'sci':
+                valid += 1
+
+    print('accuracy ', (valid/total)*100, '%')
 
 
 if __name__ == '__main__':
