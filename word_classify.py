@@ -197,11 +197,6 @@ main function
 '''
 def main():
     data = learn_naive_bayes_text('./train-data')
-    # file_doc = open('./test-data/elec.52723.txt.json')
-    # file_doc = open('./test-data/37261.txt.json')
-    # doc = json.load(file_doc)
-    # doc = read_doc(doc)
-    # ans = classify_naive_bayes_text(doc, data)
 
     valid = 0
     total = 0
