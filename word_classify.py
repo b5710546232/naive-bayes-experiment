@@ -125,11 +125,12 @@ def learn_naive_bayes_text(root):
             # |Vocabulary | = num_of_vocab_dict[class_names]
             # n + | Vocabulary |
 
-            #  n = num_of_vocab_dict[class_name]
+            #  n = total number of words in Textj (counting duplicate words multipletimes)
+            # |Vocabulary | = all distinct words and other tokens
 
             #      P(Wk|Vj)       =  nk+1 / n+ |Vocabulary |
             vocab_dict[word][key] = (vocab_dict[word][class_name + "_count"] +1) \
-                                    / (num_of_vocab_dict[class_name] + total_vocab)
+                                    / (num_of_vocab_dict[class_name] + len(vocab_dict))
 #  debug
     # print(vocab_dict)
     return vocab_dict, num_of_vocab_dict
